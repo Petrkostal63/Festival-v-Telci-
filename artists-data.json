@@ -1,0 +1,16 @@
+{
+  "version": "2026-03-12",
+  "note": "Aktualizuj tento soubor pro automatický update dat v aplikaci. Pole 'img' nastav na URL fotky. Pridej novy zaznam do 'artists' pole.",
+  "artists": [
+    {
+      "id": 20,
+      "name": "Vlaďky syn",
+      "genre": "Rap",
+      "stage": "rap",
+      "img": null,
+      "imgFallback": true,
+      "isNew": true,
+      "rapNew": true
+    }
+  ]
+}

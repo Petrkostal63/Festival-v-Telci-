@@ -1,0 +1,814 @@
+﻿<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Festival v Telči 2026</title>
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="FvT 2026"/>
+  <meta name="theme-color" content="#0D0015"/>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/sw.js');
+      });
+    }
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            fest: { orange:'#FF8C1A', orangeL:'#FF9933', orangeD:'#FF6600', purple:'#300030', dark:'#100018' }
+          },
+          fontFamily: { sans:['Montserrat','sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    *{font-family:'Montserrat',sans-serif;scroll-behavior:smooth}
+    ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#100018}::-webkit-scrollbar-thumb{background:#FF8C1A;border-radius:3px}
+    .grad-btn{background:linear-gradient(to right,#FF9933,#FF6600);transition:opacity .2s}.grad-btn:hover{opacity:.88}
+    .ghost-btn{border:2px solid rgba(255,255,255,.6);color:#fff;transition:background .2s}.ghost-btn:hover{background:rgba(255,255,255,.12)}
+    .hero-overlay{background:linear-gradient(110deg,rgba(48,0,48,.95) 0%,rgba(48,0,48,.75) 38%,rgba(48,0,48,.25) 68%,transparent 100%)}
+    .artist-card{overflow:hidden;border-radius:24px;position:relative;aspect-ratio:3/4;cursor:pointer}
+    .artist-card img{width:100%;height:100%;object-fit:cover;transition:transform .4s ease}
+    .artist-card:hover img{transform:scale(1.07)}
+    .card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(255,100,0,.95) 0%,rgba(255,140,26,.3) 48%,transparent 75%)}
+    .card-info{position:absolute;bottom:0;left:0;right:0;padding:18px 14px 16px}
+    .logo-white{filter:brightness(0) invert(1)}
+    .stage-pill{display:inline-block;font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:4px}
+    .ticket-progress{position:relative;display:flex;align-items:center;justify-content:space-between}
+    .ticket-progress::before{content:'';position:absolute;top:50%;left:10%;right:10%;border-top:2px dashed rgba(255,255,255,.35);z-index:0}
+    .ticket-node{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+    .ticket-dot{width:16px;height:16px;border-radius:50%;border:3px solid white}
+    .tab-active{background:#FF8C1A!important;border-color:#FF8C1A!important;color:white!important}
+    .sched-card{border-radius:12px;padding:10px 12px;margin-bottom:8px;border-left:4px solid;position:relative;overflow:hidden}
+    @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.4}}
+    #fvtbook-wall .msg-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;margin-bottom:10px}
+    .section-accent{width:52px;height:4px;background:#FF8C1A;border-radius:2px}
+    .sticky-nav{position:sticky;top:0;z-index:100;background:rgba(16,0,24,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,140,26,.2)}
+    /* Modals */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);z-index:9999;display:none;align-items:center;justify-content:center;padding:16px}
+    .modal-box{background:#1a0025;border:1px solid rgba(255,140,26,.25);border-radius:24px;max-width:580px;width:100%;max-height:88vh;overflow-y:auto;position:relative;scrollbar-width:thin}
+    .modal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;background:rgba(255,255,255,.1);border-radius:50%;border:none;color:white;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;flex-shrink:0}.modal-close:hover{background:rgba(255,140,26,.4)}
+    /* Clickable tiles */
+    .info-tile{cursor:pointer;transition:transform .18s,box-shadow .18s,border-color .18s}.info-tile:hover{transform:translateY(-5px);box-shadow:0 14px 36px rgba(255,140,26,.2);border-color:rgba(255,140,26,.5)!important}
+    /* Logo fallback */
+    .img-fallback{width:100%;height:100%;background:linear-gradient(135deg,#300030,#1a0020);display:flex;align-items:center;justify-content:center;padding:20%}
+    .img-fallback img{width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1);opacity:.35}
+    /* Artist named placeholder */
+    .artist-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center}
+    /* Smart shortcuts */
+    .shortcut-btn{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:14px 20px;cursor:pointer;transition:all .2s;text-decoration:none;color:white}
+    .shortcut-btn:hover{background:rgba(255,140,26,.18);border-color:#FF8C1A;transform:translateY(-2px)}
+    /* Night mode */
+    body.night-mode{filter:brightness(.82) saturate(.88)}
+    /* Mobile base */
+    body{overflow-x:hidden}
+    @media(max-width:767px){
+      /* Hero */
+      .hero-logo-wrap{display:none!important}
+      .hero-logo-inline{display:flex!important}
+      .hero-h1{font-size:clamp(28px,7.5vw,44px)!important;margin-bottom:10px!important}
+      .hero-cta a{padding:10px 20px!important;font-size:11px!important}
+      .hero-shortcuts{display:none!important}
+      .hero-content{padding-bottom:2rem!important;padding-top:1rem!important;justify-content:flex-start!important;align-items:flex-start!important}
+      /* Sections */
+      .section-h2{font-size:1.75rem!important}
+      .section-py{padding-top:3rem!important;padding-bottom:3rem!important}
+      .day-btn{padding-left:1rem!important;padding-right:1rem!important;font-size:10px!important}
+      .shortcut-btn{padding:10px 14px!important}
+    }
+    /* Festival map tile */
+    .map-coming{background:repeating-linear-gradient(45deg,rgba(255,140,26,.04) 0px,rgba(255,140,26,.04) 10px,transparent 10px,transparent 20px);border:2px dashed rgba(255,140,26,.3)!important}
+    /* Countdown badges */
+    .countdown-tag{display:inline-block;background:rgba(255,200,0,.15);color:#FFD93D;font-size:9px;font-weight:900;letter-spacing:.08em;padding:2px 7px;border-radius:3px;vertical-align:middle;margin-left:6px}
+  </style>
+</head>
+<body class="bg-fest-dark text-white antialiased">
+
+<!-- ══════════════════════ STICKY NAV ══════════════════════ -->
+<nav class="sticky-nav">
+  <div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+    <a href="#home">
+      <img src="logo-black.png" alt="Festival v Telči" style="height:55px;width:auto;filter:drop-shadow(0 2px 8px rgba(0,0,0,.7))"/>
+    </a>
+    <div class="hidden md:flex items-center gap-2">
+      <a href="#lineup"   class="ghost-btn text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-lg">Line-up</a>
+      <a href="#calendar" class="ghost-btn text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-lg">Program</a>
+      <a href="#tickets"  class="ghost-btn text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-lg">Vstupenky</a>
+      <a href="#fvtbook"  class="ghost-btn text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-lg">FvT Book</a>
+      <a href="#info"     class="ghost-btn text-xs font-bold tracking-widest uppercase px-4 py-2 rounded-lg">Info</a>
+      <a href="https://tickets.nfctron.com/event/marecek-industrie-sro/festival-v-telci-2026" target="_blank" class="grad-btn text-white text-xs font-bold tracking-widest uppercase px-5 py-2.5 rounded-[10px] ml-2">🎟 Vstupenky</a>
+    </div>
+    <button onclick="toggleMobileMenu()" class="md:hidden text-white">
+      <svg id="menuIcon" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    </button>
+  </div>
+  <div id="mobileMenu" class="hidden md:hidden px-6 pb-4 space-y-2">
+    <a href="#lineup"   onclick="toggleMobileMenu()" class="block text-sm font-bold tracking-wider uppercase py-2 text-white/80 hover:text-fest-orange" style="color:rgba(255,255,255,.8)">Line-up</a>
+    <a href="#calendar" onclick="toggleMobileMenu()" class="block text-sm font-bold tracking-wider uppercase py-2 text-white/80 hover:text-fest-orange" style="color:rgba(255,255,255,.8)">Program</a>
+    <a href="#tickets"  onclick="toggleMobileMenu()" class="block text-sm font-bold tracking-wider uppercase py-2 text-white/80 hover:text-fest-orange" style="color:rgba(255,255,255,.8)">Vstupenky</a>
+    <a href="#fvtbook"  onclick="toggleMobileMenu()" class="block text-sm font-bold tracking-wider uppercase py-2 text-white/80 hover:text-fest-orange" style="color:rgba(255,255,255,.8)">FvT Book</a>
+    <a href="#info"     onclick="toggleMobileMenu()" class="block text-sm font-bold tracking-wider uppercase py-2 text-white/80 hover:text-fest-orange" style="color:rgba(255,255,255,.8)">Info</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════ HERO ══════════════════════ -->
+<section id="home" class="relative min-h-screen flex flex-col" style="margin-top:-64px;padding-top:64px">
+  <div class="absolute inset-0 overflow-hidden">
+    <img src="hero.jpg" alt="" class="w-full h-full object-cover object-center" onerror="this.style.display='none'"/>
+    <div class="hero-overlay absolute inset-0"></div>
+    <div class="absolute bottom-0 left-0 right-0 h-48" style="background:linear-gradient(to bottom,transparent,#100018)"></div>
+  </div>
+  <!-- Logo na hero (desktop: absolute, mobile: inline) -->
+  <div class="hero-logo-wrap absolute top-0 left-0 right-0 flex justify-center z-10 pointer-events-none" style="padding-top:88px">
+    <img src="logo-black.png" alt="Festival v Telči" class="hero-logo" style="height:160px;width:auto;filter:drop-shadow(0 4px 32px rgba(0,0,0,.85)) drop-shadow(0 2px 12px rgba(0,0,0,.9))"/>
+  </div>
+  <div class="hero-content relative z-10 flex-1 flex items-end pb-14 md:pb-24 px-6 md:px-16">
+    <div class="max-w-3xl">
+      <!-- Logo inline pro mobil -->
+      <div class="hero-logo-inline" style="display:none;justify-content:flex-start;margin-bottom:18px;pointer-events:none">
+        <img src="logo-black.png" alt="Festival v Telči" style="height:65px;width:auto;filter:drop-shadow(0 4px 24px rgba(0,0,0,.9)) drop-shadow(0 2px 8px rgba(0,0,0,.9))"/>
+      </div>
+      <p class="text-xs font-bold tracking-[.45em] uppercase mb-5" style="color:#FF8C1A">19. – 20. 6. 2026 · Kemp U Roštěnky, Telč</p>
+      <h1 class="hero-h1 font-black uppercase leading-none mb-6" style="font-size:clamp(44px,8.5vw,88px);letter-spacing:-.01em;line-height:.97">
+        <span style="color:#FF8C1A">SPOLEČNĚ</span><br>
+        <span class="text-white">DVA DNY,</span><br>
+        <span class="text-white">CO PÍŠOU PŘÍBĚH.</span>
+      </h1>
+      <div class="section-accent mb-7"></div>
+      <div class="hero-cta flex flex-wrap gap-4 mb-8">
+        <a href="https://tickets.nfctron.com/event/marecek-industrie-sro/festival-v-telci-2026" target="_blank" class="grad-btn text-white font-black uppercase tracking-widest text-sm px-8 py-4 rounded-[10px]">🎟 Koupit vstupenky</a>
+        <a href="#lineup" class="ghost-btn font-bold uppercase tracking-widest text-sm px-8 py-4 rounded-[10px]">Line-up 2026</a>
+      </div>
+      <!-- Smart Shortcuts -->
+      <div class="hero-shortcuts flex flex-wrap gap-3">
+        <a href="#calendar" onclick="scrollToNowPlaying()" class="shortcut-btn">
+          <span style="font-size:22px">🎸</span>
+          <div><p style="font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.08em">Kdo hraje teď?</p><p style="color:rgba(255,255,255,.5);font-size:10px">Živý program</p></div>
+        </a>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=Kemp+u+Ro%C5%A1t%C4%9Bnky%2C+Tel%C4%8D&travelmode=driving" target="_blank" class="shortcut-btn">
+          <span style="font-size:22px">🧭</span>
+          <div><p style="font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.08em">Kudy do areálu?</p><p style="color:rgba(255,255,255,.5);font-size:10px">Navigace Google Maps</p></div>
+        </a>
+        <a href="#fvtbook" class="shortcut-btn">
+          <span style="font-size:22px">📖</span>
+          <div><p style="font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.08em">FvT Book</p><p style="color:rgba(255,255,255,.5);font-size:10px">Komunita festivaláků</p></div>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 animate-bounce">
+    <svg width="26" height="26" fill="none" stroke="#FF8C1A" stroke-width="2.5" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+  </div>
+</section>
+
+<!-- ══════════════════════ LINE-UP ══════════════════════ -->
+<section id="lineup" class="section-py py-20 px-6 md:px-12" style="background:#0d0015">
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-10">
+      <p class="text-xs font-bold tracking-[.4em] uppercase mb-2" style="color:#FF8C1A">Interpreti</p>
+      <h2 class="section-h2 text-white font-black uppercase text-5xl tracking-tight mb-4">LINE-UP 2026</h2>
+      <div class="section-accent"></div>
+    </div>
+    <div class="flex flex-wrap gap-3 mb-10" id="stageTabs">
+      <button onclick="filterStage('all')" data-stage="all" class="stage-tab tab-active font-bold text-xs tracking-widest uppercase px-5 py-2 rounded-full border border-white/20 transition-all">VŠICHNI</button>
+      <button onclick="filterStage('main')" data-stage="main" class="stage-tab font-bold text-xs tracking-widest uppercase px-5 py-2 rounded-full border transition-all" style="border-color:#ff6800;color:#ff6800">🎤 Mareček Stage</button>
+      <button onclick="filterStage('rap')" data-stage="rap" class="stage-tab font-bold text-xs tracking-widest uppercase px-5 py-2 rounded-full border transition-all" style="border-color:#9B59B6;color:#9B59B6">🎵 NFCtron Stage</button>
+      <button onclick="filterStage('third')" data-stage="third" class="stage-tab font-bold text-xs tracking-widest uppercase px-5 py-2 rounded-full border transition-all" style="border-color:#1A9E6E;color:#1A9E6E">🎶 Město Telč Stage</button>
+    </div>
+    <div id="artistGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+    <p class="text-white/40 text-sm text-center mt-12">📢 Přesný program bude zveřejněn na <a href="https://www.festivalvtelci.cz" target="_blank" style="color:#FF8C1A" class="hover:underline">festivalvtelci.cz</a></p>
+  </div>
+</section>
+
+<!-- ══════════════════════ CALENDAR ══════════════════════ -->
+<section id="calendar" class="section-py py-20 px-6 md:px-12" style="background:#0a0010">
+  <div class="max-w-6xl mx-auto">
+    <div class="mb-10">
+      <p class="text-xs font-bold tracking-[.4em] uppercase mb-2" style="color:#FF8C1A">Harmonogram</p>
+      <h2 class="section-h2 text-white font-black uppercase text-5xl tracking-tight mb-4">PROGRAM</h2>
+      <div class="section-accent"></div>
+    </div>
+    <!-- Day toggle -->
+    <div class="flex gap-3 mb-10">
+      <button onclick="setDay('fri')" id="dayFri" class="day-btn day-tab tab-active font-black text-sm tracking-widest uppercase px-8 py-3 rounded-[10px] border border-white/20 transition-all">Pátek 19. 6.</button>
+      <button onclick="setDay('sat')" id="daySat" class="day-btn day-tab font-black text-sm tracking-widest uppercase px-8 py-3 rounded-[10px] border border-white/20 transition-all" style="background:transparent;color:rgba(255,255,255,.5)">Sobota 20. 6.</button>
+    </div>
+    <!-- 3-column stage grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="calendarGrid">
+      <!-- filled by JS -->
+    </div>
+    <p class="text-white/35 text-xs text-center mt-8">* Časy jsou orientační. Oficiální program bude upřesněn na webu festivalu.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════ TICKETS ══════════════════════ -->
+<section id="tickets" class="section-py py-20 px-6 md:px-12" style="background:#FF8C1A">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-16">
+      <p class="text-white/70 text-xs font-bold tracking-[.4em] uppercase mb-2">Vstup na festival</p>
+      <h2 class="section-h2 text-white font-black uppercase text-5xl tracking-tight mb-4">VSTUPENKY</h2>
+      <div class="section-accent mx-auto" style="background:white"></div>
+    </div>
+    <!-- Current tickets on sale -->
+    <div class="flex justify-center mb-16">
+      <div class="rounded-2xl p-10 border-2 text-center w-full max-w-sm" style="background:rgba(48,0,48,.55);border-color:rgba(255,255,255,.35)">
+        <p class="text-white/70 text-xs font-bold tracking-[.3em] uppercase mb-3">Aktuálně v prodeji</p>
+        <p class="text-white font-black text-5xl mb-2">3. vlna</p>
+        <p class="text-white font-black text-3xl mb-8">1 240 Kč</p>
+        <a href="https://tickets.nfctron.com/event/marecek-industrie-sro/festival-v-telci-2026" target="_blank"
+           class="grad-btn text-white font-black uppercase tracking-widest text-sm px-8 py-4 rounded-[10px] inline-block">
+          🎟 Koupit vstupenku
+        </a>
+      </div>
+    </div>
+    <!-- VIP -->
+    <div class="rounded-2xl p-8 border-2 border-white/30" style="background:rgba(48,0,48,.55)">
+      <h3 class="text-white font-black uppercase text-2xl tracking-tight mb-6">★ VIP ZÓNA</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="flex items-start gap-3"><span style="color:#FF8C1A;flex-shrink:0">★</span><span class="text-white/85 text-sm font-medium">VIP tribuna s nejlepším výhledem na hlavní stage</span></div>
+        <div class="flex items-start gap-3"><span style="color:#FF8C1A;flex-shrink:0">★</span><span class="text-white/85 text-sm font-medium">Komfortní VIP chill-out zóna pro odpočinek</span></div>
+        <div class="flex items-start gap-3"><span style="color:#FF8C1A;flex-shrink:0">★</span><span class="text-white/85 text-sm font-medium">Krytý VIP stan – klid, zázemí a pohodlí jen pro vás</span></div>
+        <div class="flex items-start gap-3"><span style="color:#FF8C1A;flex-shrink:0">★</span><span class="text-white/85 text-sm font-medium">VIP bar s neomezenou konzumací (pivo, víno, nealko)</span></div>
+        <div class="flex items-start gap-3"><span style="color:#FF8C1A;flex-shrink:0">★</span><span class="text-white/85 text-sm font-medium">Průběžné občerstvení v ceně</span></div>
+        <div class="flex items-start gap-3"><span style="color:#FF8C1A;flex-shrink:0">★</span><span class="text-white/85 text-sm font-medium">Exkluzivní setkání s vybranými interprety festivalu</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ FVT BOOK ══════════════════════ -->
+<section id="fvtbook" class="section-py py-20 px-6 md:px-12" style="background:#0d0015">
+  <div class="max-w-4xl mx-auto">
+    <div class="mb-10">
+      <p class="text-xs font-bold tracking-[.4em] uppercase mb-2" style="color:#FF8C1A">Komunita</p>
+      <h2 class="section-h2 text-white font-black uppercase text-5xl tracking-tight mb-4">FvT BOOK</h2>
+      <div class="section-accent mb-4"></div>
+    </div>
+
+    <!-- Code of Conduct -->
+    <div class="rounded-xl p-4 mb-8 flex items-start gap-4 border" style="background:rgba(255,140,26,.1);border-color:rgba(255,140,26,.4)">
+      <span class="text-2xl flex-shrink-0">📜</span>
+      <div>
+        <p class="font-black uppercase tracking-wider text-sm mb-1" style="color:#FF8C1A">Kodex chování</p>
+        <p class="text-white/80 text-sm leading-relaxed">"Chovejte se k sobě slušně. Respektujte ostatní a autorská práva."</p>
+      </div>
+    </div>
+
+    <!-- AUTH: Login/Register (shown when logged out) -->
+    <div id="fvt-auth-forms" class="rounded-2xl p-8 mb-8 border border-white/10" style="background:rgba(255,255,255,.04)">
+      <div class="flex gap-3 mb-6">
+        <button onclick="fvtSwitchTab('login')" id="tab-login" class="font-black text-xs tracking-widest uppercase px-5 py-2 rounded-full border transition-all" style="border-color:#FF8C1A;background:#FF8C1A;color:white">Přihlásit se</button>
+        <button onclick="fvtSwitchTab('register')" id="tab-register" class="font-black text-xs tracking-widest uppercase px-5 py-2 rounded-full border transition-all" style="border-color:rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.5)">Registrovat</button>
+      </div>
+      <!-- Login panel -->
+      <div id="fvt-login-panel">
+        <input id="login-email" type="email" placeholder="E-mail" autocomplete="email" class="w-full mb-3 border border-white/15 rounded-xl px-4 py-3 text-white text-sm placeholder-white/40 focus:outline-none" style="background:rgba(255,255,255,.06)"/>
+        <input id="login-password" type="password" placeholder="Heslo" autocomplete="current-password" class="w-full mb-4 border border-white/15 rounded-xl px-4 py-3 text-white text-sm placeholder-white/40 focus:outline-none" style="background:rgba(255,255,255,.06)"/>
+        <button id="login-btn" class="grad-btn text-white font-black uppercase tracking-widest text-sm px-8 py-3 rounded-[10px]">Přihlásit se →</button>
+        <p id="login-error" class="text-xs mt-3" style="display:none;color:#e74c3c"></p>
+      </div>
+      <!-- Register panel -->
+      <div id="fvt-register-panel" style="display:none">
+        <input id="reg-email" type="email" placeholder="E-mail" autocomplete="email" class="w-full mb-3 border border-white/15 rounded-xl px-4 py-3 text-white text-sm placeholder-white/40 focus:outline-none" style="background:rgba(255,255,255,.06)"/>
+        <input id="reg-password" type="password" placeholder="Heslo (min. 6 znaků)" autocomplete="new-password" class="w-full mb-4 border border-white/15 rounded-xl px-4 py-3 text-white text-sm placeholder-white/40 focus:outline-none" style="background:rgba(255,255,255,.06)"/>
+        <button id="reg-btn" class="grad-btn text-white font-black uppercase tracking-widest text-sm px-8 py-3 rounded-[10px]">Zaregistrovat se →</button>
+        <p id="reg-error" class="text-xs mt-3" style="display:none"></p>
+      </div>
+    </div>
+
+    <!-- AUTH: Logged-in user bar -->
+    <div id="fvt-user-info" class="rounded-xl p-4 mb-6 flex items-center justify-between border" style="display:none;background:rgba(255,140,26,.08);border-color:rgba(255,140,26,.25)">
+      <div class="flex items-center gap-3">
+        <div style="width:36px;height:36px;border-radius:50%;background:#FF8C1A;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:white">👤</div>
+        <span id="fvt-user-email" class="text-white font-bold text-sm"></span>
+      </div>
+      <button id="logout-btn" class="text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-lg border" style="border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.6);background:transparent">Odhlásit se</button>
+    </div>
+
+    <!-- AUTH: Email not verified notice -->
+    <div id="fvt-verify-notice" class="rounded-xl p-5 mb-6 border" style="display:none;background:rgba(255,200,0,.08);border-color:rgba(255,200,0,.3)">
+      <p style="color:#FFD93D;font-weight:900;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">E-mail nebyl ověřen</p>
+      <p class="text-white/70 text-sm mb-4">Na tvůj e-mail byl odeslán ověřovací odkaz. Klikni na něj a pak se znovu přihlas. Po přihlášení budeš moci přidávat příspěvky.</p>
+      <button id="resend-verification-btn" class="grad-btn text-white font-bold text-xs uppercase tracking-widest px-5 py-2 rounded-lg">Znovu odeslat ověřovací e-mail</button>
+    </div>
+
+    <!-- Post form (logged in + email verified) -->
+    <div id="fvt-post-form" class="rounded-2xl p-8 mb-8 border border-white/10" style="display:none;background:rgba(255,255,255,.04)">
+      <h3 class="text-white font-black uppercase text-lg tracking-tight mb-5">Přidat příspěvek</h3>
+      <textarea id="fvt-msg" placeholder="Napište vzkaz ostatním festivalákům..." rows="3" maxlength="280" class="w-full border border-white/15 rounded-xl px-4 py-3 text-white text-sm placeholder-white/40 focus:outline-none mb-4 resize-none" style="background:rgba(255,255,255,.06)"></textarea>
+      <button id="post-submit-btn" class="grad-btn text-white font-black uppercase tracking-widest text-sm px-8 py-3 rounded-[10px]">Přidat příspěvek</button>
+      <p id="fvt-post-error" class="text-red-400 text-xs mt-3" style="display:none"></p>
+    </div>
+
+    <!-- Message wall -->
+    <div id="fvtbook-wall">
+      <h3 class="text-white font-black uppercase text-lg tracking-tight mb-4">Zeď příspěvků</h3>
+      <div id="fvt-posts">
+        <p id="fvt-posts-loading" class="text-white/35 text-sm text-center py-6">Načítám příspěvky...</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════ INFO ══════════════════════ -->
+<section id="info" class="section-py py-20 px-6 md:px-12" style="background:#0a0010">
+  <div class="max-w-5xl mx-auto">
+    <div class="mb-12 text-center">
+      <p class="text-xs font-bold tracking-[.4em] uppercase mb-2" style="color:#FF8C1A">Vše co potřebuješ</p>
+      <h2 class="section-h2 text-white font-black uppercase text-5xl tracking-tight mb-4">PRAKTICKÉ INFO</h2>
+      <div class="section-accent mx-auto"></div>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mb-16">
+      <div onclick="openInfoModal('misto')" class="info-tile flex flex-col items-center text-center p-5 rounded-2xl border border-white/10" style="background:rgba(255,140,26,.06)">
+        <div class="text-4xl mb-3">📍</div>
+        <h3 class="text-white font-bold text-xs uppercase tracking-wide mb-2">Místo</h3>
+        <p class="text-white/50 text-xs leading-relaxed">Kemp U Roštěnky, Telč</p>
+        <a href="https://www.google.com/maps/dir/?api=1&destination=Kemp+u+Ro%C5%A1t%C4%9Bnky%2C+Tel%C4%8D&travelmode=driving" target="_blank" onclick="event.stopPropagation()" style="margin-top:9px;background:linear-gradient(to right,#FF9933,#FF6600);color:white;font-size:9.5px;font-weight:900;padding:5px 11px;border-radius:6px;text-decoration:none;text-transform:uppercase;letter-spacing:.07em;display:block">🧭 Navigovat na místo</a>
+        <span style="color:rgba(255,140,26,.55);font-size:9px;font-weight:700;margin-top:4px">více info →</span>
+      </div>
+      <div onclick="openInfoModal('datum')" class="info-tile flex flex-col items-center text-center p-5 rounded-2xl border border-white/10" style="background:rgba(255,140,26,.06)">
+        <div class="text-4xl mb-3">📅</div>
+        <h3 class="text-white font-bold text-xs uppercase tracking-wide mb-2">Datum</h3>
+        <p class="text-white/50 text-xs leading-relaxed">19. – 20. 6. 2026 pá + so</p>
+        <span style="color:#FF8C1A;font-size:10px;font-weight:700;margin-top:6px">více info →</span>
+      </div>
+      <div onclick="openInfoModal('kemping')" class="info-tile flex flex-col items-center text-center p-5 rounded-2xl border border-white/10" style="background:rgba(255,140,26,.06)">
+        <div class="text-4xl mb-3">⛺</div>
+        <h3 class="text-white font-bold text-xs uppercase tracking-wide mb-2">Kempování</h3>
+        <p class="text-white/50 text-xs leading-relaxed">Stan 200 Kč, karavan od 800 Kč</p>
+        <span style="color:#FF8C1A;font-size:10px;font-weight:700;margin-top:6px">více info →</span>
+      </div>
+      <div onclick="openInfoModal('parkovani')" class="info-tile flex flex-col items-center text-center p-5 rounded-2xl border border-white/10" style="background:rgba(255,140,26,.06)">
+        <div class="text-4xl mb-3">🚗</div>
+        <h3 class="text-white font-bold text-xs uppercase tracking-wide mb-2">Parkování</h3>
+        <p class="text-white/50 text-xs leading-relaxed">200 Kč / auto / den</p>
+        <span style="color:#FF8C1A;font-size:10px;font-weight:700;margin-top:6px">více info →</span>
+      </div>
+      <div onclick="openInfoModal('jidlo')" class="info-tile flex flex-col items-center text-center p-5 rounded-2xl border border-white/10" style="background:rgba(255,140,26,.06)">
+        <div class="text-4xl mb-3">🍺</div>
+        <h3 class="text-white font-bold text-xs uppercase tracking-wide mb-2">Jídlo &amp; Pití</h3>
+        <p class="text-white/50 text-xs leading-relaxed">Food zóna, bary v areálu</p>
+        <span style="color:#FF8C1A;font-size:10px;font-weight:700;margin-top:6px">více info →</span>
+      </div>
+      <div onclick="openInfoModal('telc')" class="info-tile flex flex-col items-center text-center p-5 rounded-2xl border border-white/10" style="background:rgba(255,140,26,.06)">
+        <div class="text-4xl mb-3">🏰</div>
+        <h3 class="text-white font-bold text-xs uppercase tracking-wide mb-2">Telč UNESCO</h3>
+        <p class="text-white/50 text-xs leading-relaxed">Historické centrum, hrad Roštejn</p>
+        <span style="color:#FF8C1A;font-size:10px;font-weight:700;margin-top:6px">více info →</span>
+      </div>
+      <!-- Doprovodné aktivity tile -->
+      <div onclick="openInfoModal('aktivity')" class="info-tile flex flex-col items-center text-center p-5 rounded-2xl border" style="background:rgba(255,255,255,.07);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-color:rgba(255,255,255,.18)">
+        <div class="text-4xl mb-3">🎪</div>
+        <h3 class="text-white font-bold text-xs uppercase tracking-wide mb-2">Doprovodné aktivity</h3>
+        <p class="text-white/50 text-xs leading-relaxed">Workshopy, chill zóna, turistika</p>
+        <span style="color:#FF8C1A;font-size:10px;font-weight:700;margin-top:6px">více info →</span>
+      </div>
+    </div>
+    <!-- Festival Map Slot -->
+    <div onclick="openInfoModal('mapa')" class="info-tile map-coming rounded-2xl p-6 mb-10 flex flex-col md:flex-row items-center gap-6 cursor-pointer" style="background:rgba(255,140,26,.04)">
+      <div class="text-5xl flex-shrink-0">🗺️</div>
+      <div class="flex-1 text-center md:text-left">
+        <p class="font-black uppercase text-xs tracking-widest mb-1" style="color:#FF8C1A">Mapa areálu</p>
+        <h3 class="text-white font-black text-xl uppercase tracking-tight mb-2">Mapu areálu pro vás připravujeme.</h3>
+        <p class="text-white/50 text-sm">Detailní schéma areálu se zobrazeními všech stagí, zázemí, parkování, vstupu a první pomoci bude dostupné brzy. Připraveno pro interaktivní zobrazení.</p>
+      </div>
+      <a href="https://www.google.com/maps/dir/?api=1&destination=Kemp+u+Ro%C5%A1t%C4%9Bnky%2C+Tel%C4%8D&travelmode=driving" target="_blank" onclick="event.stopPropagation()" style="flex-shrink:0;background:linear-gradient(to right,#FF9933,#FF6600);color:white;font-size:10px;font-weight:900;padding:8px 14px;border-radius:8px;text-decoration:none;text-transform:uppercase;letter-spacing:.07em">🧭 Navigovat</a>
+      <span style="color:rgba(255,140,26,.55);font-size:12px;font-weight:700;flex-shrink:0">více info →</span>
+    </div>
+    <!-- CONTACTS — exact as specified -->
+    <div class="rounded-2xl p-8 border border-white/10" style="background:rgba(255,255,255,.04)">
+      <h3 class="text-white font-black uppercase text-2xl tracking-tight mb-8">KONTAKTY</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="rounded-xl p-5 border border-white/8" style="background:rgba(255,255,255,.04)">
+          <p class="font-black uppercase text-xs tracking-widest mb-3" style="color:#FF8C1A">Média & PR</p>
+          <a href="mailto:media@festivalvtelci.cz" class="text-white text-sm hover:underline font-medium">media@festivalvtelci.cz</a>
+        </div>
+        <div class="rounded-xl p-5 border border-white/8" style="background:rgba(255,255,255,.04)">
+          <p class="font-black uppercase text-xs tracking-widest mb-3" style="color:#FF8C1A">Produkce</p>
+          <p class="text-white font-bold text-sm mb-1">Jan Kameník</p>
+          <a href="mailto:honza@festivalvtelci.cz" class="text-white/70 text-xs hover:underline block">honza@festivalvtelci.cz</a>
+          <a href="tel:+420733134946" class="text-white/70 text-xs hover:underline">+420 733 134 946</a>
+        </div>
+        <div class="rounded-xl p-5 border border-white/8" style="background:rgba(255,255,255,.04)">
+          <p class="font-black uppercase text-xs tracking-widest mb-3" style="color:#FF8C1A">Management</p>
+          <p class="text-white font-bold text-sm mb-1">Ing. Vojtěch Nosek</p>
+          <a href="mailto:vojta@festivalvtelci.cz" class="text-white/70 text-xs hover:underline">vojta@festivalvtelci.cz</a>
+        </div>
+        <div class="rounded-xl p-5 border border-white/8" style="background:rgba(255,255,255,.04)">
+          <p class="font-black uppercase text-xs tracking-widest mb-3" style="color:#FF8C1A">Vstupenky (NFCtron)</p>
+          <a href="mailto:info@nfctron.com" class="text-white text-sm hover:underline font-medium">info@nfctron.com</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social -->
+    <div class="flex flex-wrap gap-4 mt-8 justify-center">
+      <a href="https://www.facebook.com/festivalvtelci" target="_blank" class="grad-btn text-white font-bold text-sm uppercase tracking-widest px-8 py-3 rounded-[10px]">Facebook</a>
+      <a href="https://www.instagram.com/festivalvtelci/" target="_blank" class="grad-btn text-white font-bold text-sm uppercase tracking-widest px-8 py-3 rounded-[10px]">Instagram</a>
+      <a href="https://www.youtube.com/channel/UC8BBbUV-PAat1ZCApEvkmhQ" target="_blank" class="grad-btn text-white font-bold text-sm uppercase tracking-widest px-8 py-3 rounded-[10px]">YouTube</a>
+    </div>
+  </div>
+</section>
+
+<!-- Modal overlay (static HTML) -->
+<div id="modal-overlay" class="modal-backdrop" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ FOOTER ══════════════════════ -->
+<footer class="py-12 px-6 md:px-12 border-t border-white/10 text-center" style="background:#100018">
+  <img src="logo-black.png" alt="Festival v Telči" style="height:220px;width:auto;margin:0 auto 16px;display:block;filter:drop-shadow(0 4px 20px rgba(0,0,0,.5))"/>
+  <p class="text-white/40 text-xs mb-4">19. – 20. června 2026 · Kemp U Roštěnky, Telč</p>
+  <a href="https://www.festivalvtelci.cz" target="_blank" class="text-xs font-bold uppercase tracking-widest hover:underline" style="color:#FF8C1A">festivalvtelci.cz</a>
+  <p class="text-white/20 text-xs mt-4">© 2026 Marecek Industrie s.r.o.</p>
+</footer>
+
+<!-- ══════════════════════ JAVASCRIPT ══════════════════════ -->
+<script>
+// ─── DATA (let – patched by auto-sync) ─────────────────
+let ARTISTS = [
+  {id:1,  name:'Rybičky 48',          genre:'Rock',          stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/12/Rybicky48-450x450.webp',         headliner:true},
+  {id:2,  name:'DYMYTRY',             genre:'Metal / Rock',  stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/12/Dymytry-lineup-450x450.webp',    headliner:true},
+  {id:3,  name:'Olympic',             genre:'Rock / Pop',    stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/10/Line-up-450x450.webp',           headliner:true},
+  {id:4,  name:'Richard Müller',      genre:'Pop / Folk',    stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/10/Line-up_-02-450x450.webp',      headliner:true},
+  {id:5,  name:'Wohnout',             genre:'Rock / Reggae', stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/11/Wohnout-11-1-450x450.png'},
+  {id:6,  name:'Anna K.',             genre:'Pop / Rock',    stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/11/AnnaK-450x450.webp'},
+  {id:7,  name:'Walda Gang',          genre:'Folk / Punk',   stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/11/Waldagang-330x330.webp'},
+  {id:8,  name:'Vesna',               genre:'Folk / World',  stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/10/Line-up_-07-330x330.webp'},
+  {id:9,  name:'IMT Smile',           genre:'Pop / Rock',    stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/11/IMT-330x330.webp'},
+  {id:10, name:'Adam Ďurica',         genre:'Pop',           stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/10/Line-up_-03-330x330.webp'},
+  {id:11, name:'Petr Bende & Band',   genre:'Pop',           stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/10/Line-up_-04-330x330.webp'},
+  {id:12, name:'Kapela Pekař',        genre:'Pop / Indie',   stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/10/Line-up_-01-330x330.webp'},
+  {id:13, name:'Kateřina Marie Tichá',genre:'Pop / Soul',    stage:'main', img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/10/Line-up_-05-330x330.webp'},
+  {id:14, name:'Refew',               genre:'Hip-Hop / Rap', stage:'rap',  img:'https://www.festivalvtelci.cz/wp-content/uploads/2026/02/Refew-330x330.png',            isNew:true},
+  {id:15, name:'Robin Zoot',          genre:'Hip-Hop / Rap', stage:'rap',  img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/10/Line-up_-09-330x330.webp',     isNew:true},
+  {id:16, name:'Gleb',                genre:'Hip-Hop',       stage:'rap',  img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/11/2.-Web-Line-up-14-330x330.png', isNew:true},
+  {id:17, name:'Dorian',              genre:'Rap',           stage:'rap',  img:'https://www.festivalvtelci.cz/wp-content/uploads/2025/10/Line-up_-08-330x330.webp',     isNew:true, rapNew:true},
+  {id:18, name:'Pain',                genre:'Rap',           stage:'rap',  img:'https://www.festivalvtelci.cz/wp-content/uploads/2026/01/rap-19-330x330.png',           isNew:true, rapNew:true},
+  {id:19, name:'Katannah',            genre:'Rap / R&B',     stage:'rap',  img:'https://www.festivalvtelci.cz/wp-content/uploads/2026/01/rap-20-330x330.png',           isNew:true, rapNew:true},
+  {id:20, name:'Vlaďky syn',          genre:'Rap',           stage:'rap',  img:'https://www.festivalvtelci.cz/wp-content/uploads/2026/03/vladky-syn-330x330.png',       isNew:true, rapNew:true},
+];
+
+// ─── ARTIST BIOS ─────────────────────────────────────────
+const ARTIST_BIOS = {
+  'Rybičky 48':'Česká rock-pop kapela, která baví diváky svou energií, nezaměnitelným humorem a chytlavými melodiemi. Na Festival v Telči přiváží nejlepší hity z víc než dvaceti let na scéně.',
+  'DYMYTRY':'Metalová sorta s duší! DYMYTRY propojují heavy metal s elektronickými prvky a neuvěřitelnou charismatičností. Festival v Telči bude jedním z nejintenzivnějších shows sezóny 2026.',
+  'Olympic':'Živá legenda české hudby. Olympic hrají od roku 1962 a jejich hity překračují generace — od "Dej mi víc své lásky" po "Prázdniny na zámku". Nefalšovaný rockový svátek.',
+  'Richard Müller':'Slovenský zpěvák a skladatel, jehož hlas vyvolává silné emoce. Richard Müller přináší nezaměnitelné spojení folk, pop a soul s poetickými texty.',
+  'Wohnout':'Reggae-rockový nářez z Prahy. Wohnout jsou zárukou skvělé energie, politicky nabitých textů a davu, který do poslední písničky neopustí parket.',
+  'Anna K.':'Ikona české pop-rockové scény. Anna Kačmarčíková je zpěvačka s mocným hlasem a hitovou diskografií, která rozezní hlavní stage Telče.',
+  'Walda Gang':'Řekni folk-punk a první co se vybaví? Walda Gang! Skvělé texty, akustická energie a parta lidí, které je radost sledovat i poslouchat.',
+  'Vesna':'Česko-slovenská world-music kapela s kořeny v tradiční slovanské hudbě. Jejich show propojuje folklór, hip-hop a moderní elektroniku.',
+  'IMT Smile':'Slovenská pop-rocková kapela plná hitů. IMT Smile jsou festivaloví veteráni, kteří vždy přinesou neodhaknutelné singly a dav zpívající každý refrén.',
+  'Adam Ďurica':'Slovenský zpěvák a skladatel s unikátním hlasem. Adam Ďurica je jednou z nejrespektovanějších postav slovenské pop scény.',
+  'Petr Bende & Band':'Mladý slovenský popový fenomén s vyprodanými turné a miliony streamů. Petr Bende a jeho band přinesou energetický set plný moderního popu.',
+  'Kapela Pekař':'Parta muzikantů se svým indie-pop zvukem. Kapela Pekař patří k nejvýraznějším tuzemským kapelám nové generace.',
+  'Kateřina Marie Tichá':'Zpěvačka s nezaměnitelným hlasem a silnými texty. Kateřina Marie Tichá a BANDJEEZ přinesou na festival live show plnou emocí.',
+  'Refew':'Jeden z nejtalentovanějších slovenských rapperů současnosti. Refew je znám pro svůj propracovaný flow a texty, které rezonují s generací Z.',
+  'Robin Zoot':'Česko-slovenský rapper a producent spojující jazz, soul a hip-hop. Robin Zoot přináší sofistikovaný rap s nepřehlédnutelnou osobností.',
+  'Gleb':'Mladý hip-hop talent s unikátním stylem a emotivními texty. Gleb se rychle řadí mezi nejvýraznější nová jména české rap scény.',
+  'Dorian':'Rapper s jasnou vizí a silným sdělením. Dorian je jednou z nejočekávanějších novinek letošního ročníku na NFCtron Stage.',
+  'Pain':'Rap artist s intenzivním přístupem a poctivým řemeslem. Pain přináší na festival silnou živou show bez kompromisů.',
+  'Katannah':'Rapper a producent, jehož hudba stojí na průsečíku R&B, hip-hopu a alternativy. Katannah je novinka festivalu, kterou nechceš propásnout.',
+  'Vlaďky syn':'Enigmatický rapper s silnou identitou a texty, které se zarývají pod kůži. Vlaďky syn debutuje na NFCtron Stage jako jedna z nejzajímavějších novinek.'
+};
+const ARTIST_WEBS = {
+  'Rybičky 48':'https://www.rybicky48.cz','DYMYTRY':'https://dymytry.com',
+  'Olympic':'https://www.olympic.cz','Wohnout':'https://www.wohnout.cz',
+  'Anna K.':'https://www.annak.cz','IMT Smile':'https://www.imtsmile.sk',
+  'Walda Gang':'https://www.waldagang.cz','Vesna':'https://www.vesnaband.cz'
+};
+
+const SCHEDULE = {
+  fri: {
+    main:  [{t:'17:30',e:'19:00',name:'Walda Gang'},{t:'19:00',e:'20:30',name:'Anna K.'},{t:'20:30',e:'22:15',name:'IMT Smile'},{t:'22:15',e:'00:15',name:'Rybičky 48'}],
+    rap:   [{t:'17:00',e:'18:15',name:'Katannah'},{t:'18:15',e:'19:30',name:'Pain'},{t:'19:30',e:'21:00',name:'Gleb'},{t:'21:00',e:'22:30',name:'Robin Zoot'}],
+    third: [{t:'17:00',e:'18:30',name:'Kapela Pekař'},{t:'18:30',e:'20:00',name:'Adam ďurica'},{t:'20:00',e:'22:00',name:'Kateřina Marie Tichá'}],
+  },
+  sat: {
+    main:  [{t:'16:30',e:'18:00',name:'Vesna'},{t:'18:00',e:'19:30',name:'Petr Bende & Band'},{t:'19:30',e:'21:00',name:'Wohnout'},{t:'21:00',e:'22:45',name:'Richard Müller'},{t:'22:45',e:'00:30',name:'Olympic'},{t:'00:00',e:'02:00',name:'DYMYTRY'}],
+    rap:   [{t:'16:00',e:'17:15',name:'Vlaďky syn'},{t:'17:15',e:'18:45',name:'Dorian'},{t:'18:45',e:'20:30',name:'Refew'},{t:'20:30',e:'22:00',name:'Robin Zoot'}],
+    third: [{t:'16:00',e:'17:30',name:'Adam ďurica'},{t:'17:30',e:'19:30',name:'Kapela Pekař'},{t:'19:30',e:'22:00',name:'Kateřina Marie Tichá'}],
+  }
+};
+const STAGE_COLORS = { main:'#FF6600', rap:'#9B59B6', third:'#1A9E6E' };
+const STAGE_LABELS = { main:'🎤 Mareček Industries Stage', rap:'🎵 NFCtron Stage', third:'🎶 Město Telč Stage' };
+
+// ─── MODAL ENGINE ────────────────────────────────────────
+// Modal overlay is in static HTML above the footer
+
+function showModal(html) {
+  var ov = document.getElementById('modal-overlay');
+  if (!ov) { alert('modal-overlay chybi v DOM'); return; }
+  document.getElementById('modal-content').innerHTML = html;
+  ov.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+function closeModal() {
+  var ov = document.getElementById('modal-overlay');
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeModal(); });
+
+function imgFallback(img) {
+  img.onerror = null;
+  img.src = 'logo.png';
+  img.style.objectFit = 'contain';
+  img.style.padding = '20%';
+  img.style.background = 'linear-gradient(135deg,#300030,#1a0020)';
+  img.style.filter = 'brightness(0) invert(1)';
+  img.style.opacity = '.35';
+}
+
+// ─── LINE-UP FILTER ──────────────────────────────────────
+let activeStage = 'all';
+function filterStage(stage) {
+  activeStage = stage;
+  renderArtists();
+  document.querySelectorAll('.stage-tab').forEach(function(btn) {
+    var a = btn.dataset.stage === stage;
+    btn.classList.toggle('tab-active', a);
+    if (!a) btn.style.background = 'transparent';
+  });
+}
+function _artistPlaceholder(a) {
+  // Festival-branded placeholder with artist name in festival colors
+  var stageC = {main:'#FF6600',rap:'#9B59B6',third:'#1A9E6E'}[a.stage] || '#FF8C1A';
+  var initials = a.name.split(' ').map(function(w){return w[0];}).join('').slice(0,3).toUpperCase();
+  return '<div class="artist-placeholder" style="background:linear-gradient(145deg,#1a0028,#2d0045)">' +
+    '<div style="width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:18px;color:white;background:' + stageC + ';flex-shrink:0;border:3px solid rgba(255,255,255,.15)">' + initials + '</div>' +
+    '<p style="color:white;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.06em;text-align:center;line-height:1.3">' + a.name + '</p>' +
+    '<img src="logo.png" alt="" style="width:40%;opacity:.15;filter:brightness(0) invert(1)"/>' +
+    '</div>';
+}
+
+function renderArtists() {
+  var grid = document.getElementById('artistGrid');
+  if (!grid) return;
+  var list = activeStage === 'all' ? ARTISTS : ARTISTS.filter(function(a){ return a.stage === activeStage; });
+  grid.innerHTML = list.map(function(a) {
+    var imgHtml = (a.img && !a.imgFallback)
+      ? '<img src="' + a.img + '" alt="' + a.name + '" loading="lazy" onerror="imgFallback(this)"/>'
+      : _artistPlaceholder(a);
+    var hlBadge = a.headliner
+      ? '<span class="stage-pill" style="position:absolute;top:10px;left:10px;background:#FF8C1A;color:white">HEADLINER</span>' : '';
+    var newBadge = a.rapNew
+      ? '<span class="stage-pill" style="position:absolute;top:10px;right:10px;background:#9B59B6;color:white;font-size:7.5px">NOVINKA! RAP STAGE</span>'
+      : (a.isNew ? '<span class="stage-pill" style="position:absolute;top:10px;right:10px;background:#FF6600;color:white">NOVINKA</span>' : '');
+    return '<div class="artist-card" onclick="openArtistModal(' + a.id + ')">' +
+      imgHtml + '<div class="card-overlay"></div>' + hlBadge + newBadge +
+      '<div class="card-info">' +
+      '<p style="color:white;font-weight:900;font-size:14px;letter-spacing:.01em;text-transform:uppercase;line-height:1.2;margin-bottom:3px">' + a.name + '</p>' +
+      '<p style="color:rgba(255,255,255,.75);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em">' + a.genre + '</p>' +
+      '</div></div>';
+  }).join('');
+}
+renderArtists();
+
+// ─── ARTIST MODAL ────────────────────────────────────────
+function openArtistModal(id) {
+  var a = ARTISTS.find(function(x){ return x.id === id; });
+  if (!a) return;
+  var sc = { main:'#FF6600', rap:'#9B59B6', third:'#1A9E6E' };
+  var sn = { main:'Mareček Industries Stage', rap:'NFCtron Stage', third:'Město Telč Stage' };
+  var badges = (a.headliner ? '<span class="stage-pill" style="background:#FF8C1A;color:white;margin-right:4px">HEADLINER</span>' : '') +
+    (a.rapNew ? '<span class="stage-pill" style="background:#9B59B6;color:white;font-size:7.5px">NOVINKA! RAP STAGE</span>'
+              : a.isNew ? '<span class="stage-pill" style="background:#FF6600;color:white">NOVINKA</span>' : '');
+  var bio = ARTIST_BIOS[a.name] || 'Více informací najdeš na webu festivalu.';
+  var web = ARTIST_WEBS[a.name] || null;
+  var hasRealImg = a.img && !a.imgFallback;
+  var stageC2 = {main:'#FF6600',rap:'#9B59B6',third:'#1A9E6E'}[a.stage] || '#FF8C1A';
+  var initials2 = a.name.split(' ').map(function(w){return w[0];}).join('').slice(0,3).toUpperCase();
+  var imgSec = hasRealImg
+    ? '<div style="position:relative;aspect-ratio:16/9;overflow:hidden;border-radius:20px 20px 0 0">' +
+      '<img src="' + a.img + '" alt="' + a.name + '" style="width:100%;height:100%;object-fit:cover" onerror="imgFallback(this)"/>' +
+      '<div style="position:absolute;inset:0;background:linear-gradient(to top,#1a0025,transparent 55%)"></div></div>'
+    : '<div style="aspect-ratio:16/9;background:linear-gradient(145deg,#1a0028,#2d0045);border-radius:20px 20px 0 0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px">' +
+      '<div style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:white;background:' + stageC2 + ';border:3px solid rgba(255,255,255,.2)">' + initials2 + '</div>' +
+      '<p style="color:white;font-weight:900;font-size:14px;text-transform:uppercase;letter-spacing:.06em;text-align:center">' + a.name + '</p>' +
+      '<img src="logo.png" alt="" style="width:25%;opacity:.15;filter:brightness(0) invert(1)"/></div>';
+  showModal(imgSec +
+    '<div style="padding:22px 24px 28px">' +
+    (badges ? '<div style="margin-bottom:10px">' + badges + '</div>' : '') +
+    '<h2 style="color:white;font-size:26px;font-weight:900;text-transform:uppercase;margin:0 0 4px">' + a.name + '</h2>' +
+    '<p style="color:rgba(255,255,255,.4);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px">' + a.genre + '</p>' +
+    '<div style="display:inline-block;background:rgba(255,255,255,.07);border-radius:8px;padding:4px 10px;margin-bottom:16px">' +
+    '<span style="color:' + sc[a.stage] + ';font-size:11px;font-weight:700">' + sn[a.stage] + '</span></div>' +
+    '<p style="color:rgba(255,255,255,.75);font-size:14px;line-height:1.7;margin-bottom:20px">' + bio + '</p>' +
+    '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+    (web ? '<a href="' + web + '" target="_blank" class="grad-btn" style="color:white;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block">Oficiální web →</a>' : '') +
+    '<a href="#calendar" onclick="closeModal()" style="border:2px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block">🗓 Program</a>' +
+    '<a href="https://tickets.nfctron.com/event/marecek-industrie-sro/festival-v-telci-2026" target="_blank" class="grad-btn" style="color:white;font-weight:900;font-size:11px;text-transform:uppercase;letter-spacing:.1em;padding:10px 20px;border-radius:8px;text-decoration:none;display:inline-block">🎟 Vstupenky</a>' +
+    '</div></div>');
+}
+
+// ─── LIVE PROGRESS HELPERS ─────────────────────────────────
+function _toMins(t) {
+  var p = t.split(':'); var h = parseInt(p[0],10); var m = parseInt(p[1],10);
+  if (h < 6) h += 24;
+  return h * 60 + m;
+}
+function _liveProgress(t, e) {
+  var now = new Date();
+  var cur = now.getHours() * 60 + now.getMinutes();
+  if (now.getHours() < 6) cur += 24 * 60;
+  var s = _toMins(t), en = _toMins(e);
+  if (cur < s)  return {state:'upcoming'};
+  if (cur >= en) return {state:'done'};
+  return {state:'playing', pct: Math.min(99, Math.round((cur - s) / (en - s) * 100))};
+}
+
+// ─── CALENDAR ────────────────────────────────────────────
+// Auto-select festival day based on real date
+var activeDay = (function() {
+  var d = new Date(); var m = d.getMonth()+1; var day = d.getDate();
+  if (m === 6 && day === 20) return 'sat';
+  return 'fri';
+})();
+
+function setDay(day) {
+  activeDay = day;
+  renderCalendar();
+  ['fri','sat'].forEach(function(d) {
+    var btn = document.getElementById('day' + d.charAt(0).toUpperCase() + d.slice(1));
+    if (d === day) { btn.style.background='#FF8C1A'; btn.style.color='white'; btn.style.borderColor='#FF8C1A'; }
+    else { btn.style.background='transparent'; btn.style.color='rgba(255,255,255,.45)'; btn.style.borderColor='rgba(255,255,255,.2)'; }
+  });
+}
+function renderCalendar() {
+  var grid = document.getElementById('calendarGrid');
+  var data = SCHEDULE[activeDay];
+  grid.innerHTML = ['main','rap','third'].map(function(stageId) {
+    return '<div>' +
+      '<div class="font-black text-xs uppercase tracking-widest mb-4 pb-3 border-b border-white/10" style="color:' + STAGE_COLORS[stageId] + '">' + STAGE_LABELS[stageId] + '</div>' +
+      data[stageId].map(function(item) {
+        var lv = item.e ? _liveProgress(item.t, item.e) : {state:''};
+        var isPlaying = lv.state === 'playing';
+        var isDone    = lv.state === 'done';
+        var isUpcoming = lv.state === 'upcoming';
+        var barHtml = isPlaying
+          ? '<div style="position:absolute;inset:0;width:' + lv.pct + '%;background:rgba(0,230,80,.18);border-radius:8px 0 0 8px;z-index:0;pointer-events:none"></div>' : '';
+        var liveTag = isPlaying
+          ? '<span style="display:inline-block;margin-left:6px;background:rgba(0,190,65,.9);color:white;font-size:9px;font-weight:900;letter-spacing:.08em;padding:2px 6px;border-radius:3px;vertical-align:middle;animation:livePulse 1.4s infinite">● ŽIVĚ</span>' : '';
+        var countdownTag = '';
+        if (isUpcoming && item.e) {
+          var now2 = new Date(); var curM = now2.getHours()*60+now2.getMinutes(); if(now2.getHours()<6) curM+=1440;
+          var diff = _toMins(item.t) - curM;
+          if (diff > 0 && diff <= 120) {
+            var h2 = Math.floor(diff/60); var m2 = diff%60;
+            countdownTag = '<span class="countdown-tag">⏱ ' + (h2>0 ? h2+'h ':'' ) + (m2<10?'0':'')+m2+'min</span>';
+          }
+        }
+        var doneStyle = isDone ? 'opacity:.35;' : '';
+        var bc = isPlaying ? '#00df60' : STAGE_COLORS[stageId];
+        return '<div class="sched-card" style="background:rgba(255,255,255,.04);border-left-color:' + bc + (isPlaying ? ';box-shadow:inset 0 0 0 1px rgba(0,230,80,.2)' : '') + '">' +
+          barHtml +
+          '<div style="position:relative;z-index:1;' + doneStyle + '">' +
+          '<span class="font-black text-xs" style="color:' + bc + '">' + item.t + '</span>' +
+          (item.e ? '<span style="color:rgba(255,255,255,.28);font-size:9px;margin-left:3px">→ ' + item.e + '</span>' : '') +
+          liveTag + countdownTag +
+          '<p class="text-white font-bold text-sm mt-0.5">' + item.name + '</p>' +
+          (isDone ? '<p style="color:rgba(255,255,255,.28);font-size:10px;margin-top:1px">Skončeno ✓</p>' : '') +
+          '</div></div>';
+      }).join('') + '</div>';
+  }).join('');
+}
+setDay(activeDay);
+// Refresh every minute so live bars advance automatically
+setInterval(renderCalendar, 60000);
+
+// ─── FVT BOOK tab switcher ────────────────────────────────
+function fvtSwitchTab(tab) {
+  var isLogin = tab === 'login';
+  document.getElementById('fvt-login-panel').style.display    = isLogin ? '' : 'none';
+  document.getElementById('fvt-register-panel').style.display = isLogin ? 'none' : '';
+  var tLogin = document.getElementById('tab-login');
+  var tReg   = document.getElementById('tab-register');
+  if (isLogin) {
+    tLogin.style.background = '#FF8C1A'; tLogin.style.borderColor = '#FF8C1A'; tLogin.style.color = 'white';
+    tReg.style.background   = 'transparent'; tReg.style.borderColor = 'rgba(255,255,255,.2)'; tReg.style.color = 'rgba(255,255,255,.5)';
+  } else {
+    tReg.style.background   = '#FF8C1A'; tReg.style.borderColor = '#FF8C1A'; tReg.style.color = 'white';
+    tLogin.style.background = 'transparent'; tLogin.style.borderColor = 'rgba(255,255,255,.2)'; tLogin.style.color = 'rgba(255,255,255,.5)';
+  }
+}
+
+// ─── SCROLL TO NOW PLAYING ──────────────────────────────────
+function scrollToNowPlaying() {
+  setTimeout(function() {
+    var live = document.querySelector('.sched-card [style*="livePulse"]');
+    if (live) live.closest('.sched-card').scrollIntoView({behavior:'smooth',block:'center'});
+  }, 300);
+}
+
+// ─── NIGHT MODE (after 21:00) ─────────────────────────────
+(function() {
+  function checkNightMode() {
+    var h = new Date().getHours();
+    var isNight = (h >= 21 || h < 4);
+    document.body.classList.toggle('night-mode', isNight);
+  }
+  checkNightMode();
+  setInterval(checkNightMode, 60000);
+})();
+
+// ─── MOBILE MENU ──────────────────────────────────────────
+function toggleMobileMenu() {
+  document.getElementById('mobileMenu').classList.toggle('hidden');
+}
+
+// ─── AUTO-SYNC via artists-data.json ─────────────────────
+var _syncHash = '';
+var _syncTimer = null;
+var _syncIndicator = null;
+var SYNC_INTERVAL = 24 * 60 * 60 * 1000; // jednou denně
+
+function _showSyncDot(ok) {
+  if (!_syncIndicator) {
+    _syncIndicator = document.createElement('div');
+    _syncIndicator.title = 'Auto-sync status';
+    _syncIndicator.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:999;width:10px;height:10px;border-radius:50%;transition:background .4s';
+    document.body.appendChild(_syncIndicator);
+  }
+  _syncIndicator.style.background = ok ? '#2ecc71' : '#e74c3c';
+  _syncIndicator.style.opacity = '1';
+  clearTimeout(_syncIndicator._fade);
+  _syncIndicator._fade = setTimeout(function(){ _syncIndicator.style.opacity = '.3'; }, 2000);
+}
+
+function loadArtistsData() {
+  fetch('./artists-data.json?' + Date.now(), { cache:'no-store' })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject('HTTP ' + r.status); })
+    .then(function(d) {
+      if (!d || !d.artists) return;
+      var newHash = JSON.stringify(d);
+      if (newHash === _syncHash) return; // nic se nezmenilo
+      _syncHash = newHash;
+      var changed = false;
+      d.artists.forEach(function(patch) {
+        var a = ARTISTS.find(function(x){ return x.id === patch.id; });
+        if (a) {
+          Object.keys(patch).forEach(function(k) {
+            if (JSON.stringify(a[k]) !== JSON.stringify(patch[k])) { a[k] = patch[k]; changed = true; }
+          });
+        } else if (patch.id && patch.name) {
+          ARTISTS.push(patch); changed = true;
+        }
+      });
+      if (changed) renderArtists();
+      _showSyncDot(true);
+    })
+    .catch(function(e) {
+      // file:// protokol nebo chyba site - zobraz hint jednou
+      if (!window._syncWarnShown) {
+        window._syncWarnShown = true;
+        console.warn('[FvT Auto-sync] Pro automatické aktualizace spusť server: klikni dvakrát na START-SERVER.bat');
+      }
+      _showSyncDot(false);
+    });
+}
+
+// Polling jednou denně – při načtení a po 24 hodinách
+function _startPolling() {
+  loadArtistsData();
+  _syncTimer = setInterval(loadArtistsData, SYNC_INTERVAL);
+}
+// Při návratu do záložky zkontroluj, jestli uběhl den
+var _lastVisible = Date.now();
+document.addEventListener('visibilitychange', function() {
+  if (!document.hidden) {
+    if (Date.now() - _lastVisible >= SYNC_INTERVAL) {
+      loadArtistsData();
+    }
+    _lastVisible = Date.now();
+  }
+});
+_startPolling();
+</script>
+<!-- Standalone modal engine – guaranteed to work independently -->
+<script src="modal.js"></script>
+<!-- Firebase init + app logic -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="firebaseInit.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
