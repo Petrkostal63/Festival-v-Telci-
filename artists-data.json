@@ -9,15 +9,7 @@
       "stage": "rap",
       "img": "https://www.festivalvtelci.cz/wp-content/uploads/2026/03/vladky-syn-330x330.png",
       "isNew": true,
-      "rapNew": true    },
-    {
-      "id": 21,
-      "name": "Pio Squad",
-      "genre": "Hip-Hop / Rap",
-      "stage": "rap",
-      "img": "https://www.festivalvtelci.cz/wp-content/uploads/2026/03/pio-squad-330x330.png",
-      "isNew": true,
-      "rapNew": true,
-      "imgFallback": true    }
+      "rapNew": true
+    }
   ]
 }
