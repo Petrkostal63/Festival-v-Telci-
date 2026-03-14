@@ -1,5 +1,5 @@
-const CACHE = 'fvt-v1';
-const ASSETS = ['/', '/modal.js'];
+const CACHE = 'fvt-v2';
+const ASSETS = ['./', './modal.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(() => {})));
